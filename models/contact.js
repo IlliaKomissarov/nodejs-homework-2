@@ -35,7 +35,7 @@ const contactSchema = new Schema(
         {
           validator: (v) => v.length >= 2,
           message: (props) =>
-            `Invalid name. Must be at least 2 characters. Got ${props.value.length}`,
+            `Invalid name! Must be at least 2 characters. Got ${props.value.length}`,
         },
         {
           validator: (v) => v.length <= 30,
@@ -72,6 +72,11 @@ const contactSchema = new Schema(
     favorite: {
       type: Boolean,
       default: false,
+    },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
     },
   },
   { versionKey: false, timestamps: true }
