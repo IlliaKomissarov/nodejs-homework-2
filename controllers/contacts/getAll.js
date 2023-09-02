@@ -7,11 +7,16 @@ const getAll = async (req, res) => {
 
   const filter = favorite ? { owner, favorite } : { owner };
 
-  const result = await Contact.find(filter, "-createdAt -updatedAt", {
-    skip,
-    limit,
-  }).populate("owner", "email subscription");
-  res.json(result);
+  try {
+    const result = await Contact.find(filter, "-createdAt -updatedAt", {
+      skip,
+      limit,
+    }).populate("owner", "email subscription");
+    res.json(result);
+  } catch (error) {
+    console.error("Error while retrieving contacts:", error);
+    res.status(500).json({ error: "Server error" });
+  }
 };
 
 module.exports = getAll;
