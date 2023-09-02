@@ -30,7 +30,7 @@ const contactSchema = new Schema(
             return patterns.namePattern.test(v);
           },
           message: (props) =>
-            `${props.value} is invalid name. The name must be written only in letters`,
+            `${props.value} is invalid name! The name must be written only in letters`,
         },
         {
           validator: (v) => v.length >= 2,
