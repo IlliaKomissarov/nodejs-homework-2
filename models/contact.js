@@ -1,87 +1,65 @@
 const { Schema, model } = require("mongoose");
 const Joi = require("joi");
+const handleMongooseError = require("../utils/handleMongooseError");
 
-const { handleMongooseError, patterns } = require("../helpers");
+const emailRegexp = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
 
-const validationContact = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string()
-    .email({ minDomainSegments: 2 })
-    .messages({
-      "string.pattern.base":
-        "Invalid email. Please provide a valid email address",
-    })
-    .required(),
-  phone: Joi.string().required(),
-  favorite: Joi.boolean(),
-});
-
-const validationFavorite = Joi.object({
-  favorite: Joi.boolean().required(),
-});
+const phoneRegexp = /^[0-9]{10}$/;
 
 const contactSchema = new Schema(
   {
-    name: {
-      type: String,
-      validate: [
-        {
-          validator: function (v) {
-            return patterns.namePattern.test(v);
-          },
-          message: (props) =>
-            `${props.value} is invalid name. The name must be written only in letters`,
-        },
-        {
-          validator: (v) => v.length >= 2,
-          message: (props) =>
-            `Invalid name. Must be at least 2 characters. Got ${props.value.length}`,
-        },
-        {
-          validator: (v) => v.length <= 30,
-          message: (props) =>
-            `Invalid name. Must be no more 30 characters. Got ${props.value.length}`,
-        },
-      ],
-      required: [true, "The name is required. Set it for contact"],
-    },
+    name: { type: String, required: [true, "Set name for contact"] },
     email: {
       type: String,
-      unique: true,
-      required: [
-        true,
-        "The email is required. Please provide an email address for the contact",
-      ],
+      required: [true, "Set email for contact"],
+      match: emailRegexp,
     },
     phone: {
       type: String,
-      unique: true,
-      validate: [
-        {
-          validator: function (v) {
-            return patterns.phonePattern.test(v);
-          },
-          message: "Invalid phone number. The format should be (XXX) XXX-XXXX",
-        },
-      ],
-      required: [
-        true,
-        "The phone is required. Please provide phone for the contact",
-      ],
+      required: [true, "Set phone for contact"],
+      match: phoneRegexp,
     },
-    favorite: {
-      type: Boolean,
-      default: false,
+    favorite: { type: Boolean, default: false },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
     },
   },
-  { versionKey: false, timestamps: true }
+  { versionKey: false }
 );
 
 contactSchema.post("save", handleMongooseError);
+
+const requiredSchema = Joi.object({
+  name: Joi.string().alphanum().min(3).max(30).required(),
+  email: Joi.string().regex(emailRegexp).required(),
+  phone: Joi.string()
+    .regex(phoneRegexp)
+    .messages({ "string.pattern.base": `Phone number must have 10 digits.` })
+    .required(),
+  favorite: Joi.boolean().default(false),
+});
+
+const noRequiredSchema = Joi.object({
+  name: Joi.string().alphanum().min(3).max(30),
+  email: Joi.string().regex(emailRegexp),
+  phone: Joi.string()
+    .regex(phoneRegexp)
+    .messages({ "string.pattern.base": `Phone number must have 10 digits.` }),
+  favorite: Joi.boolean(),
+});
+
+const updateFavoriteSchema = Joi.object({
+  favorite: Joi.boolean()
+    .required()
+    .messages({ "any.required": "missing field favorite" }),
+});
+
 const Contact = model("contact", contactSchema);
 
 module.exports = {
+  updateFavoriteSchema,
+  requiredSchema,
+  noRequiredSchema,
   Contact,
-  validationContact,
-  validationFavorite,
 };
