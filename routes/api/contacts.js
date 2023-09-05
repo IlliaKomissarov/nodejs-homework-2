@@ -14,7 +14,7 @@ const {
   updateFavoriteSchema,
 } = require("../../models/contact");
 const isValidId = require("../../utils/isValidId");
-const authentication = require("../../middlewares/authenticate ");
+const authentication = require("../../middlewares/authenticate");
 
 const router = express.Router();
 

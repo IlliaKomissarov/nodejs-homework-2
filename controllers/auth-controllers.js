@@ -2,9 +2,16 @@ const { HttpError } = require("../helpers");
 const { User } = require("../models/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
+const path = require("path");
+const fs = require("fs/promises");
+const Jimp = require("jimp");
+
 require("dotenv").config();
 
 const { SECRET_KEY } = process.env;
+
+const avatarsDir = path.join(__dirname, "../", "public", "avatars");
 
 const register = async (req, res, next) => {
   const { email, password } = req.body;
@@ -13,14 +20,23 @@ const register = async (req, res, next) => {
     return next(HttpError(409, "Email in use"));
   }
 
-  // хешуємо пароль
   const hashPassword = await bcrypt.hash(password, 10);
 
-  const result = await User.create({ email, password: hashPassword });
+  const avatarURL = gravatar.url(email);
 
-  res
-    .status(201)
-    .json({ user: { email: result.email, subscription: result.subscription } });
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL,
+  });
+
+  res.status(201).json({
+    user: {
+      email: newUser.email,
+      subscription: newUser.subscription,
+      avatarURL,
+    },
+  });
 };
 
 const login = async (req, res, next) => {
@@ -38,7 +54,7 @@ const login = async (req, res, next) => {
 
   const { _id: id } = user;
 
-  // jwt шифрує payload - тобто id користувача, а в authentication ми його розшифровуємо
+
   const token = jwt.sign({ id }, SECRET_KEY, { expiresIn: "24h" });
   await User.findByIdAndUpdate(id, { token });
 
@@ -81,4 +97,34 @@ const changeSubscription = async (req, res, next) => {
   res.status(200).json({ contact: contact });
 };
 
-module.exports = { register, login, getCurrent, logout, changeSubscription };
+const updateAvatar = async (req, res) => {
+  const { _id } = req.user;
+  const { path: tempUploadDir, originalname } = req.file;
+  const filename = `${_id}_${originalname}`;
+
+  const resultUpload = path.join(avatarsDir, filename);
+
+  await fs.rename(tempUploadDir, resultUpload);
+
+  Jimp.read(resultUpload, (err, img) => {
+    if (err) throw err;
+    img.resize(250, 250).write(resultUpload);
+  });
+
+  const avatarURL = path.join("avatars", filename);
+
+  await User.findByIdAndUpdate(_id, { avatarURL });
+
+  await User.findByIdAndUpdate(_id, { avatarURL });
+
+  res.status(200).json({ avatarURL });
+};
+
+module.exports = {
+  register,
+  login,
+  getCurrent,
+  logout,
+  changeSubscription,
+  updateAvatar,
+};
