@@ -22,6 +22,10 @@ const userSchema = new Schema({
     default: "starter",
   },
   token: { type: String, default: "" },
+  avatarURL: {
+    type: String,
+    required: [true, "Set avatar for contact"],
+  },
 });
 
 userSchema.post("save", handleMongooseError);

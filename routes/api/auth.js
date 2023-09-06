@@ -10,8 +10,10 @@ const {
   getCurrent,
   logout,
   changeSubscription,
+  updateAvatar,
 } = require("../../controllers/auth-controllers");
-const authentication = require("../../middlewares/authenticate ");
+const authentication = require("../../middlewares/authenticate");
+const upload = require("../../middlewares/upload");
 
 const router = express.Router();
 
@@ -22,6 +24,8 @@ router.post("/login", validateBody(authenticationSchema), login);
 router.post("/logout", authentication, logout);
 
 router.get("/current", authentication, getCurrent);
+
+router.patch("/avatars", authentication, upload.single("avatar"), updateAvatar);
 
 router.patch(
   "/",
