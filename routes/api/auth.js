@@ -3,6 +3,7 @@ const validateBody = require("../../utils/validateBody");
 const {
   authenticationSchema,
   subscriptionSchema,
+  emailSchema,
 } = require("../../models/user");
 const {
   register,
@@ -11,6 +12,8 @@ const {
   logout,
   changeSubscription,
   updateAvatar,
+  verifyEmail,
+  resendVerifyEmail,
 } = require("../../controllers/auth-controllers");
 const authentication = require("../../middlewares/authenticate");
 const upload = require("../../middlewares/upload");
@@ -33,5 +36,9 @@ router.patch(
   validateBody(subscriptionSchema),
   changeSubscription
 );
+
+router.get("/verify/:verificationToken", verifyEmail);
+
+router.post("/verify", validateBody(emailSchema), resendVerifyEmail);
 
 module.exports = router;
